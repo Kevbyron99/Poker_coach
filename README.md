@@ -1,70 +1,103 @@
-# Getting Started with Create React App
+# Poker Assistant
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A React application that helps you analyze poker hands and provides AI-powered advice for better decision making.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- Create and manage poker games with customizable settings
+- Visual card selection interface for your hand and community cards
+- Track known opponent cards
+- Real-time win probability calculations
+- AI-powered strategic advice based on your current poker situation
+- Responsive design for desktop and mobile use
 
-### `npm start`
+## Installation
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+1. Clone this repository
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. Set up your OpenAI API key (see below)
+4. Start the development server:
+   ```
+   npm start
+   ```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Setting Up OpenAI API Integration
 
-### `npm test`
+This application uses OpenAI's API to provide strategic poker advice. To set up the API key:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+1. Get an API key from [OpenAI](https://platform.openai.com/account/api-keys)
+2. Create a file named `.env.development.local` in the project root (if it doesn't exist)
+3. Add your API key to this file:
+   ```
+   REACT_APP_OPENAI_API_KEY=your_api_key_here
+   ```
+4. Restart the development server if it's already running
 
-### `npm run build`
+**IMPORTANT SECURITY NOTES:**
+- NEVER commit files containing API keys to version control
+- The current implementation uses the API key directly in the browser, which is not recommended for production
+- For a production application, you should set up a secure backend server to handle API requests
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## OpenAI Assistant Integration
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+This application now uses OpenAI Assistants API to provide personalized poker advice. The assistant:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- Maintains a persistent thread to learn from your gameplay
+- Offers context-aware poker strategy advice
+- Analyzes your hand strength, position, and odds
+- Provides tailored recommendations based on the current game state
 
-### `npm run eject`
+### Setup
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+1. Make sure you have an OpenAI account and have created an Assistant with poker instructions
+2. Add your OpenAI API key to the `.env.development.local` file:
+   ```
+   REACT_APP_OPENAI_API_KEY=your_openai_api_key_here
+   ```
+3. The application uses the Assistant ID: `asst_njK8PBKyiIeYVWBbsUsjmKBM`
+   - You can change this in the `AIAdvice.js` component if you want to use your own assistant
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Running the Application with Assistant
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+To run the application with the poker assistant:
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```bash
+# Install dependencies
+npm install
 
-## Learn More
+# Run both server and client
+npm run dev
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+This will start both the React frontend and the Express backend server that handles the OpenAI Assistant API calls.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## How to Use
 
-### Code Splitting
+1. Click "Start New Game" to set up a new poker game
+2. Fill in game details (number of players, blinds, etc.) and create the game
+3. Select your cards and community cards using the visual card selector
+4. View real-time win probabilities
+5. Click "Get AI Advice" to receive strategic recommendations for your current situation
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Card Notation
 
-### Analyzing the Bundle Size
+- Use the following format for cards: [Rank][Suit]
+- Ranks: 2, 3, 4, 5, 6, 7, 8, 9, T (10), J (Jack), Q (Queen), K (King), A (Ace)
+- Suits: h (hearts), d (diamonds), c (clubs), s (spades)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## Dependencies
 
-### Making a Progressive Web App
+- React
+- poker-odds (for calculating poker odds)
+- OpenAI API (for AI-powered advice)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## License
 
-### Advanced Configuration
+MIT
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## Contributing
 
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
