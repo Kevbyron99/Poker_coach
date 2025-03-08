@@ -5,7 +5,8 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Poker Assistant</h1>
+        <h1>Poker Odds Calculator</h1>
+        <p>Welcome to the Updated Poker Odds Calculator</p>
       </header>
       <main>
         <PokerAssistant />
