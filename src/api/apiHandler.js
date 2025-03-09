@@ -7,17 +7,11 @@ const handleCreateThread = async (req, res) => {
     
     // Check for API key
     if (!global.openaiConfig?.apiKey) {
-      console.error('OpenAI API key is missing in environment - trying hardcoded key for local development');
-      // For local development only
-      if (process.env.NODE_ENV !== 'production') {
-        global.openaiConfig = {
-          ...global.openaiConfig,
-          apiKey: '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'
-        };
-        console.log('Using hardcoded key for local development');
-      } else {
-        return res.status(500).json({ error: 'OpenAI API key is not configured' });
-      }
+      console.error('OpenAI API key is missing in environment variables');
+      return res.status(500).json({ 
+        error: 'OpenAI API key is not configured', 
+        message: 'Please add your API key to the .env file' 
+      });
     }
     
     // Create thread
@@ -54,17 +48,11 @@ const handleGetAssistantAdvice = async (req, res) => {
     
     // Check for API key
     if (!global.openaiConfig?.apiKey) {
-      console.error('OpenAI API key is missing in environment - trying hardcoded key for local development');
-      // For local development only
-      if (process.env.NODE_ENV !== 'production') {
-        global.openaiConfig = {
-          ...global.openaiConfig,
-          apiKey: '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'
-        };
-        console.log('Using hardcoded key for local development');
-      } else {
-        return res.status(500).json({ error: 'OpenAI API key is not configured' });
-      }
+      console.error('OpenAI API key is missing in environment variables');
+      return res.status(500).json({ 
+        error: 'OpenAI API key is not configured', 
+        message: 'Please add your API key to the .env file' 
+      });
     }
     
     // Get advice from assistant
