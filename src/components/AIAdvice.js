@@ -240,8 +240,12 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
 
   // Function to create a new thread
   const createNewThread = async () => {
+    setIsLoading(true);
+    setError('');
+    
     try {
       console.log("Creating a new thread...");
+      
       const apiUrl = process.env.NODE_ENV === 'production' 
         ? '/api/openai/createThread'
         : '/api/openai/createThread';
@@ -252,26 +256,67 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Thread creation failed with status:', response.status, errorData);
-        throw new Error(`API error: ${errorData.error || errorData.message || response.status}`);
+        console.error(`API error (${response.status}): Thread creation failed`);
+        // Get error data if available
+        try {
+          const responseText = await response.text();
+          console.error('Error response:', responseText);
+          
+          if (responseText && responseText.trim()) {
+            try {
+              const errorData = JSON.parse(responseText);
+              throw new Error(errorData.message || errorData.error || `API error: ${response.status}`);
+            } catch (jsonError) {
+              throw new Error(`API error (${response.status}): ${responseText.substring(0, 100)}`);
+            }
+          } else {
+            throw new Error(`API error (${response.status}): Empty response`);
+          }
+        } catch (error) {
+          throw new Error(`API error: ${response.statusText || response.status}`);
+        }
       }
       
-      const data = await response.json();
-      threadIdRef.current = data.threadId;
+      // Processing the response
+      console.log(`API response status: ${response.status} ${response.statusText}`);
       
-      // Store thread ID in localStorage
-      localStorage.setItem('pokerAssistantThreadId', data.threadId);
-      console.log("New thread created:", data.threadId);
-      setError('');
+      let responseData;
+      const responseText = await response.text();
+      
+      console.log('Raw API response:', responseText);
+      
+      // Only try to parse as JSON if there's actual content
+      if (responseText && responseText.trim()) {
+        try {
+          responseData = JSON.parse(responseText);
+        } catch (jsonError) {
+          console.error('Failed to parse JSON response:', jsonError);
+          throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}${responseText.length > 100 ? '...' : ''}`);
+        }
+      } else {
+        // Handle empty response
+        console.error('Empty response received from API');
+        throw new Error('Empty response from server');
+      }
+      
+      // Store the thread ID
+      if (responseData.threadId) {
+        console.log(`Thread created: ${responseData.threadId}`);
+        localStorage.setItem('pokerAssistantThreadId', responseData.threadId);
+        threadIdRef.current = responseData.threadId;
+        setIsLoading(false);
+        setError('');
+      } else {
+        throw new Error('No thread ID in response');
+      }
     } catch (error) {
-      console.error('Failed to create thread:', error);
+      console.error('Error creating thread:', error);
       setError(`Failed to connect to AI assistant: ${error.message}`);
-      throw error; // Re-throw to be handled by the caller
+      setIsLoading(false);
     }
   };
 
@@ -308,23 +353,7 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
         if (retryCount === 0) {
           setError('No connection to AI assistant. Attempting to reconnect...');
           // Try to create a new thread
-          const response = await fetch('/api/openai/createThread', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            }
-          });
-          
-          if (!response.ok) {
-            throw new Error('Failed to reconnect to AI assistant');
-          }
-          
-          const data = await response.json();
-          threadIdRef.current = data.threadId;
-          localStorage.setItem('pokerAssistantThreadId', data.threadId);
-          
-          // Now retry getting advice with the new thread
-          return getAdvice(retryCount + 1);
+          await createNewThread();
         } else {
           throw new Error('Failed to establish connection to AI assistant after retry');
         }
@@ -430,18 +459,36 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
         }
       }
       
-      // Here was the problem - we need to set the advice with the response
-      const data = await response.json();
-      console.log("API Response:", data);
+      // Processing the response
+      console.log(`API response status: ${response.status} ${response.statusText}`);
       
-      if (data.advice) {
+      let responseData;
+      const responseText = await response.text();
+      
+      console.log('Raw API response:', responseText);
+      
+      // Only try to parse as JSON if there's actual content
+      if (responseText && responseText.trim()) {
+        try {
+          responseData = JSON.parse(responseText);
+        } catch (jsonError) {
+          console.error('Failed to parse JSON response:', jsonError);
+          throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}${responseText.length > 100 ? '...' : ''}`);
+        }
+      } else {
+        // Handle empty response
+        console.error('Empty response received from API');
+        throw new Error('Empty response from server');
+      }
+      
+      if (responseData.advice) {
         // The backend returns { advice: "content" } structure
-        console.log("Setting advice from API:", data.advice);
-        setAdvice(data.advice);
-      } else if (data.content) {
+        console.log("Setting advice from API:", responseData.advice);
+        setAdvice(responseData.advice);
+      } else if (responseData.content) {
         // Just in case the structure is { content: "content" }
-        console.log("Setting content from API:", data.content);
-        setAdvice(data.content);
+        console.log("Setting content from API:", responseData.content);
+        setAdvice(responseData.content);
       } else {
         console.log("No advice in API response");
         setAdvice("The AI assistant did not return any advice. Please try again.");

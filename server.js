@@ -38,6 +38,17 @@ const { setupApiRoutes } = require('./src/api/apiHandler');
 // Setup API routes
 setupApiRoutes(app);
 
+// Error handling middleware 
+app.use((err, req, res, next) => {
+  console.error('Server error:', err.message, err.stack);
+  
+  // Ensure we always respond with proper JSON
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal Server Error',
+    status: err.status || 500
+  });
+});
+
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'build')));

@@ -2,6 +2,44 @@
 // const { openaiConfig } = require('../config/apiConfig');
 const fetch = require('node-fetch');
 
+// Helper function to handle API responses
+const handleApiResponse = async (response, errorMessage) => {
+  // Always log the status for debugging
+  console.log(`OpenAI API response status: ${response.status} ${response.statusText}`);
+  
+  if (!response.ok) {
+    // Try to get detailed error info
+    try {
+      const text = await response.text();
+      let errorData;
+      
+      try {
+        // Try to parse as JSON first
+        errorData = JSON.parse(text);
+      } catch (e) {
+        // If not JSON, use text directly
+        throw new Error(`${errorMessage}: ${text.substring(0, 100)}`);
+      }
+      
+      throw new Error(`${errorMessage}: ${errorData.error?.message || errorData.message || response.statusText}`);
+    } catch (e) {
+      // If we couldn't get the response text
+      throw new Error(`${errorMessage}: ${response.statusText || response.status}`);
+    }
+  }
+  
+  try {
+    // Try to parse the response as JSON
+    const text = await response.text();
+    if (!text || !text.trim()) {
+      throw new Error(`${errorMessage}: Empty response from API`);
+    }
+    return JSON.parse(text);
+  } catch (e) {
+    throw new Error(`${errorMessage}: Failed to parse response - ${e.message}`);
+  }
+};
+
 // Create a new Thread - OpenAI Assistants API
 const createThread = async () => {
   try {
@@ -21,12 +59,7 @@ const createThread = async () => {
       body: JSON.stringify({})
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`OpenAI API error: ${errorData.error?.message || response.status}`);
-    }
-
-    const data = await response.json();
+    const data = await handleApiResponse(response, 'Error creating thread');
     console.log('Thread created successfully:', data.id);
     return { threadId: data.id };
   } catch (error) {
@@ -49,23 +82,18 @@ const addMessageToThread = async (threadId, content) => {
       },
       body: JSON.stringify({
         role: 'user',
-        content
+        content,
       })
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`OpenAI API error: ${errorData.error?.message || response.status}`);
-    }
-
-    return await response.json();
+    return await handleApiResponse(response, 'Error adding message to thread');
   } catch (error) {
     console.error('Error adding message to thread:', error);
     throw error;
   }
 };
 
-// Run an assistant on a thread
+// Run the assistant on a thread
 const runAssistant = async (threadId, assistantId) => {
   try {
     console.log(`Running assistant ${assistantId} on thread ${threadId}`);
@@ -82,12 +110,7 @@ const runAssistant = async (threadId, assistantId) => {
       })
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`OpenAI API error: ${errorData.error?.message || response.status}`);
-    }
-
-    return await response.json();
+    return await handleApiResponse(response, 'Error running assistant');
   } catch (error) {
     console.error('Error running assistant:', error);
     throw error;
@@ -97,6 +120,8 @@ const runAssistant = async (threadId, assistantId) => {
 // Check the status of a run
 const checkRunStatus = async (threadId, runId) => {
   try {
+    console.log(`Checking run status for ${runId} on thread ${threadId}`);
+    
     const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${runId}`, {
       method: 'GET',
       headers: {
@@ -105,12 +130,7 @@ const checkRunStatus = async (threadId, runId) => {
       }
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`OpenAI API error: ${errorData.error?.message || response.status}`);
-    }
-
-    return await response.json();
+    return await handleApiResponse(response, 'Error checking run status');
   } catch (error) {
     console.error('Error checking run status:', error);
     throw error;
@@ -130,12 +150,7 @@ const getThreadMessages = async (threadId) => {
       }
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`OpenAI API error: ${errorData.error?.message || response.status}`);
-    }
-
-    return await response.json();
+    return await handleApiResponse(response, 'Error getting thread messages');
   } catch (error) {
     console.error('Error getting thread messages:', error);
     throw error;
