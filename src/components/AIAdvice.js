@@ -747,7 +747,7 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
             onClick={() => getAdvice()}
             disabled={isLoading}
           >
-            Retry Connection
+            {isLoading ? 'Connecting...' : 'Retry Connection'}
           </button>
         </div>
       )}
@@ -780,16 +780,24 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
       
       {/* No cards selected message */}
       {!advice && !isLoading && !error && (!playerCards || playerCards.length === 0) && (
-        <div className="advice-content">
-          <p>Select your cards to get advice from the AI assistant.</p>
+        <div className="ai-advice-container">
+          <div className="advice-content">
+            <p>Select your cards to get advice from the AI assistant.</p>
+          </div>
         </div>
       )}
       
       {/* Button controls */}
       <div className="ai-buttons">
-        <button className="reset-thread-btn" onClick={resetThread}>Reset Thread</button>
-        <button className="next-hand-btn" onClick={nextHand}>Next Hand</button>
-        <button className="test-btn" onClick={testConnection}>Test API</button>
+        <button className="reset-thread-btn" onClick={resetThread}>
+          <span>Reset Thread</span>
+        </button>
+        <button className="next-hand-btn" onClick={nextHand}>
+          <span>Next Hand</span>
+        </button>
+        <button className="test-btn" onClick={testConnection}>
+          <span>Test API</span>
+        </button>
       </div>
     </div>
   );
