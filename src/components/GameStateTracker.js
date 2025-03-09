@@ -61,127 +61,123 @@ function QuickCardSelector({
     setSelectedRank(null);
   };
   
-  // Clear all selections for the current type
-  const clearSelection = () => {
-    if (selectingFor === 'player') {
-      onSelectPlayerCard([]);
-    } else {
-      onSelectCommunityCard([]);
-    }
+  // Clear player cards
+  const clearPlayerCards = () => {
+    onSelectPlayerCard([]);
   };
   
-  // Toggle between player and community card selection
-  const toggleSelectionType = () => {
-    setSelectingFor(selectingFor === 'player' ? 'community' : 'player');
-    setSelectedRank(null);
+  // Clear community cards
+  const clearCommunityCards = () => {
+    onSelectCommunityCard([]);
   };
-  
-  // Render the selected cards
-  const renderSelectedCards = (cards, type) => {
-    if (cards.length === 0) {
-      return <div className="no-cards-selected">No cards selected</div>;
-    }
-    
-    return (
-      <div className="quick-selected-cards">
-        {cards.map((card, index) => {
-          const rank = card[0];
-          const suit = card[1];
-          return (
-            <div 
-              key={index} 
-              className={`quick-card ${type === 'player' ? 'player-card' : 'community-card'}`}
-              style={{ color: suitColors[suit] }}
-            >
-              {rank}{suitSymbols[suit]}
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-  
+
   return (
-    <div className="quick-card-selector">
-      <div className="selection-type-toggle">
-        <button 
-          className={`toggle-button ${selectingFor === 'player' ? 'active' : ''}`}
-          onClick={() => setSelectingFor('player')}
-        >
-          Your Cards ({playerCards.length}/2)
-        </button>
-        <button 
-          className={`toggle-button ${selectingFor === 'community' ? 'active' : ''}`}
-          onClick={() => setSelectingFor('community')}
-        >
-          Community Cards ({communityCards.length}/5)
-        </button>
+    <div className="card-selector-container">
+      {/* Display both card sections */}
+      <div className="card-sections">
+        {/* Player Cards Section */}
+        <div className="card-section">
+          <div className="section-header">
+            <h4>Your Cards ({playerCards.length}/2)</h4>
+            <button className="clear-btn" onClick={clearPlayerCards}>Clear</button>
+          </div>
+          <div className="card-display">
+            {playerCards.map((card, index) => (
+              <div 
+                key={index} 
+                className="card-display-item" 
+                style={{ color: suitColors[card[1]] }}
+              >
+                {card[0]}{suitSymbols[card[1]]}
+              </div>
+            ))}
+            {playerCards.length < 2 && (
+              [...Array(2 - playerCards.length)].map((_, i) => (
+                <div key={`empty-player-${i}`} className="card-display-empty">
+                  ?
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+        
+        {/* Community Cards Section */}
+        <div className="card-section">
+          <div className="section-header">
+            <h4>Community Cards ({communityCards.length}/5)</h4>
+            <button className="clear-btn" onClick={clearCommunityCards}>Clear</button>
+          </div>
+          <div className="card-display">
+            {communityCards.map((card, index) => (
+              <div 
+                key={index} 
+                className="card-display-item" 
+                style={{ color: suitColors[card[1]] }}
+              >
+                {card[0]}{suitSymbols[card[1]]}
+              </div>
+            ))}
+            {communityCards.length < 5 && (
+              [...Array(5 - communityCards.length)].map((_, i) => (
+                <div key={`empty-community-${i}`} className="card-display-empty">
+                  ?
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
       
-      <div className="selected-cards-area">
-        {selectingFor === 'player' 
-          ? renderSelectedCards(playerCards, 'player')
-          : renderSelectedCards(communityCards, 'community')
-        }
-      </div>
-      
-      <div className="selection-controls">
-        <button className="clear-selection" onClick={clearSelection}>
-          Clear {selectingFor === 'player' ? 'Your' : 'Community'} Cards
-        </button>
-      </div>
-      
-      {selectedRank ? (
-        // Step 2: Select suit
-        <div className="suit-selection">
-          <div className="selection-prompt">Select suit for {selectedRank}:</div>
-          <div className="suit-buttons">
-            {suits.map(suit => {
-              const card = `${selectedRank}${suit}`;
-              const isUsed = usedCards.includes(card);
-              const isSelected = 
-                (selectingFor === 'player' && playerCards.includes(card)) ||
-                (selectingFor === 'community' && communityCards.includes(card));
-              
-              return (
-                <button 
-                  key={suit}
-                  className={`suit-button ${isSelected ? 'selected' : ''} ${isUsed && !isSelected ? 'used' : ''}`}
-                  onClick={() => handleSuitSelect(suit)}
-                  disabled={isUsed && !isSelected}
-                  style={{ color: suitColors[suit] }}
-                >
-                  {selectedRank}{suitSymbols[suit]}
-                </button>
-              );
-            })}
+      {/* Selection controls */}
+      <div className="card-selection-controls">
+        <div className="selection-toggle">
+          <button 
+            className={`toggle-btn ${selectingFor === 'player' ? 'active' : ''}`}
+            onClick={() => setSelectingFor('player')}
+          >
+            Select Your Cards
+          </button>
+          <button 
+            className={`toggle-btn ${selectingFor === 'community' ? 'active' : ''}`}
+            onClick={() => setSelectingFor('community')}
+          >
+            Select Community Cards
+          </button>
+        </div>
+        
+        {/* Rank selection */}
+        <div className="rank-selector">
+          {ranks.map(rank => (
             <button 
-              className="cancel-button"
-              onClick={() => setSelectedRank(null)}
+              key={rank} 
+              className="rank-btn"
+              onClick={() => handleRankSelect(rank)}
             >
+              {rank}
+            </button>
+          ))}
+        </div>
+        
+        {/* Suit selection */}
+        {selectedRank && (
+          <div className="suit-selector">
+            {suits.map(suit => (
+              <button
+                key={suit}
+                className="suit-btn"
+                style={{ color: suitColors[suit] }}
+                onClick={() => handleSuitSelect(suit)}
+                disabled={usedCards.includes(`${selectedRank}${suit}`)}
+              >
+                {suitSymbols[suit]}
+              </button>
+            ))}
+            <button className="cancel-btn" onClick={() => setSelectedRank(null)}>
               Cancel
             </button>
           </div>
-        </div>
-      ) : (
-        // Step 1: Select rank
-        <div className="rank-selection">
-          <div className="selection-prompt">
-            Select {selectingFor === 'player' ? 'your' : 'community'} card rank:
-          </div>
-          <div className="rank-buttons">
-            {ranks.map(rank => (
-              <button 
-                key={rank}
-                className="rank-button"
-                onClick={() => handleRankSelect(rank)}
-              >
-                {rank}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -588,11 +584,21 @@ function GameStateTracker({ gameDetails, onGameStateUpdate, playerCount, playerC
   
   // Start a new hand - move blinds and reset pot
   const startNewHand = () => {
-    // Reset pot to just the blinds
-    setPotSize(currentBlinds.smallBlind + currentBlinds.bigBlind);
+    // Move blinds automatically
+    moveBlindPositions();
     
-    // Reset folded players
-    setFoldedPlayers([]);
+    // Check if blinds have made a full rotation back to player 1
+    if (blindPositions.smallBlind === 0 || blindPositions.bigBlind === 0) {
+      // If we've completed a full rotation, increase blinds
+      increaseBlindLevel();
+    }
+    
+    // Reset the street to preflop
+    setCurrentStreet('preflop');
+    
+    // Reset other hand state
+    setPotSize(currentBlinds.smallBlind + currentBlinds.bigBlind);
+    setBetToCall(currentBlinds.bigBlind);
     
     // Reset player actions
     const newActions = {};
@@ -601,17 +607,31 @@ function GameStateTracker({ gameDetails, onGameStateUpdate, playerCount, playerC
     }
     setPlayerActions(newActions);
     
-    // Reset current street
-    setCurrentStreet('preflop');
+    // Clear player and community cards
+    if (onSelectPlayerCard) {
+      onSelectPlayerCard([]);
+    }
     
-    // Move blinds to next positions
-    moveBlindPositions();
+    if (onSelectCommunityCard) {
+      onSelectCommunityCard([]);
+    }
     
-    // Set active player to UTG (player after big blind)
+    // Reset folded players
+    setFoldedPlayers([]);
+    
+    // Set active player to player after big blind
     setActivePlayer((blindPositions.bigBlind + 1) % playerCount);
     
-    // Reset all bets except for blinds
+    // Reset bets for new hand
     resetBetsForNewStreet();
+    
+    // Update game state
+    updateGameState();
+    
+    // Notify any listeners that a new hand has started
+    if (window.pokerAssistantNewHand) {
+      window.pokerAssistantNewHand();
+    }
   };
   
   // Update the parent component with the current game state
@@ -671,14 +691,6 @@ function GameStateTracker({ gameDetails, onGameStateUpdate, playerCount, playerC
       <div className="blind-controls">
         <h4>Blinds: SB ${currentBlinds.smallBlind} / BB ${currentBlinds.bigBlind}</h4>
         <div className="blind-actions">
-          <button className="move-blinds-btn" onClick={moveBlindPositions}>Move Blinds</button>
-          <button 
-            className="increase-blinds-btn" 
-            onClick={increaseBlindLevel}
-            disabled={currentBlindLevel >= blindLevels.length - 1}
-          >
-            Increase Blinds
-          </button>
           <button className="new-hand-btn" onClick={startNewHand}>Next Hand</button>
         </div>
         <div className="blind-positions">

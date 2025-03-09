@@ -8,7 +8,7 @@ const dotenv = require('dotenv');
 dotenv.config({ path: '.env.development.local' });
 
 // Make sure we have the OpenAI API key
-const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 if (!OPENAI_API_KEY) {
   console.error('OPENAI API KEY IS MISSING! Please add it to your .env.development.local file');
 }
@@ -16,8 +16,7 @@ if (!OPENAI_API_KEY) {
 // Create global config for API handlers
 global.openaiConfig = {
   apiKey: OPENAI_API_KEY,
-  model: "gpt-3.5-turbo",
-  maxTokens: 300
+  modelName: 'gpt-4-turbo-preview',
 };
 
 const app = express();

@@ -15,13 +15,13 @@
  */
 
 // For demonstration purposes only, this would typically be loaded from environment variables
-const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY || '';
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 
 // Configuration for OpenAI API
 const openaiConfig = {
   apiKey: OPENAI_API_KEY,
-  model: "gpt-3.5-turbo", // You can change this to a different model as needed
-  maxTokens: 300
+  modelName: 'gpt-4-turbo-preview',
+  maxTokens: 500,
 };
 
 module.exports = { openaiConfig }; 
