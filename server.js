@@ -26,7 +26,6 @@ console.log('Initializing API with OpenAI config:', {
 });
 
 const app = express();
-const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
@@ -51,10 +50,19 @@ app.use((err, req, res, next) => {
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'build')));
+  // Ensure this path is correct for Vercel
+  const buildPath = path.join(__dirname, 'build');
+  console.log('Serving static files from:', buildPath);
+  
+  app.use(express.static(buildPath));
   
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+    if (req.url.startsWith('/api')) {
+      // Don't try to serve API routes as static files
+      res.status(404).json({ error: 'API route not found' });
+    } else {
+      res.sendFile(path.join(buildPath, 'index.html'));
+    }
   });
 }
 
@@ -87,8 +95,15 @@ app.post('/api/getPokerAdvice', async (req, res) => {
   }
 });
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`OpenAI API key loaded: ${OPENAI_API_KEY ? 'YES' : 'NO'}`);
-}); 
+// For Vercel serverless functions, don't start a server but export the app
+if (process.env.NODE_ENV === 'production') {
+  console.log('Running in production mode (serverless)');
+  module.exports = app;
+} else {
+  // Start the server for local development
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`OpenAI API key loaded: ${OPENAI_API_KEY ? 'YES' : 'NO'}`);
+  });
+} 

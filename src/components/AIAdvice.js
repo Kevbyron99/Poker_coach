@@ -238,7 +238,18 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
     }
   }, [playerCards, communityCards, odds, gameDetails]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Function to create a new thread
+  // Get the base URL for API calls
+  const getApiBaseUrl = () => {
+    // In production deployment, use the absolute URL of the deployment
+    // This ensures API calls go to the correct domain when deployed on Vercel
+    if (process.env.NODE_ENV === 'production') {
+      // Use the current origin (domain)
+      return window.location.origin;
+    }
+    // In development, use the relative path (assuming backend is on the same host)
+    return '';
+  };
+
   const createNewThread = async () => {
     setIsLoading(true);
     setError('');
@@ -246,10 +257,7 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
     try {
       console.log("Creating a new thread...");
       
-      const apiUrl = process.env.NODE_ENV === 'production' 
-        ? '/api/openai/createThread'
-        : '/api/openai/createThread';
-      
+      const apiUrl = `${getApiBaseUrl()}/api/openai/createThread`;
       console.log(`Calling API endpoint: ${apiUrl}`);
       
       const response = await fetch(apiUrl, {
@@ -432,10 +440,7 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
       console.log("Sending request to OpenAI assistant...");
       console.log("Request body:", JSON.stringify(messageData));
       
-      const apiUrl = process.env.NODE_ENV === 'production' 
-        ? '/api/openai/getAssistantAdvice'
-        : '/api/openai/getAssistantAdvice';
-      
+      const apiUrl = `${getApiBaseUrl()}/api/openai/getAssistantAdvice`;
       console.log(`Calling API endpoint: ${apiUrl}`);
       
       const response = await fetch(apiUrl, {
@@ -568,7 +573,10 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
         })
       };
       
-      const response = await fetch('/api/openai/getAssistantAdvice', {
+      const apiUrl = `${getApiBaseUrl()}/api/openai/getAssistantAdvice`;
+      console.log(`Calling API endpoint for next hand: ${apiUrl}`);
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -642,7 +650,10 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
       
       console.log("Sending test message:", testMessageData);
       
-      const response = await fetch('/api/openai/getAssistantAdvice', {
+      const apiUrl = `${getApiBaseUrl()}/api/openai/getAssistantAdvice`;
+      console.log(`Calling API endpoint: ${apiUrl}`);
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
