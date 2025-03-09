@@ -250,6 +250,18 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
     return '';
   };
 
+  // Get API URL for specific endpoints
+  const getApiUrl = (endpoint) => {
+    // For Vercel serverless functions, we need to use a different path structure
+    if (process.env.NODE_ENV === 'production') {
+      // In production, use /api/[endpoint] format (Vercel serverless functions)
+      return `${getApiBaseUrl()}/api/${endpoint}`;
+    } else {
+      // In development, use /api/openai/[endpoint] format (Express routes)
+      return `${getApiBaseUrl()}/api/openai/${endpoint}`;
+    }
+  };
+
   const createNewThread = async () => {
     setIsLoading(true);
     setError('');
@@ -257,7 +269,7 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
     try {
       console.log("Creating a new thread...");
       
-      const apiUrl = `${getApiBaseUrl()}/api/openai/createThread`;
+      const apiUrl = getApiUrl('createThread');
       console.log(`Calling API endpoint: ${apiUrl}`);
       
       const response = await fetch(apiUrl, {
@@ -440,7 +452,7 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
       console.log("Sending request to OpenAI assistant...");
       console.log("Request body:", JSON.stringify(messageData));
       
-      const apiUrl = `${getApiBaseUrl()}/api/openai/getAssistantAdvice`;
+      const apiUrl = getApiUrl('getAssistantAdvice');
       console.log(`Calling API endpoint: ${apiUrl}`);
       
       const response = await fetch(apiUrl, {
@@ -573,7 +585,7 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
         })
       };
       
-      const apiUrl = `${getApiBaseUrl()}/api/openai/getAssistantAdvice`;
+      const apiUrl = getApiUrl('getAssistantAdvice');
       console.log(`Calling API endpoint for next hand: ${apiUrl}`);
       
       const response = await fetch(apiUrl, {
@@ -650,7 +662,7 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
       
       console.log("Sending test message:", testMessageData);
       
-      const apiUrl = `${getApiBaseUrl()}/api/openai/getAssistantAdvice`;
+      const apiUrl = getApiUrl('getAssistantAdvice');
       console.log(`Calling API endpoint: ${apiUrl}`);
       
       const response = await fetch(apiUrl, {

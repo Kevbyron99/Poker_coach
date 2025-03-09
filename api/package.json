@@ -1,0 +1,9 @@
+{
+  "name": "poker-odds-calculator-api",
+  "version": "1.0.0",
+  "description": "API functions for Poker Odds Calculator",
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "node-fetch": "^2.6.9"
+  }
+} 

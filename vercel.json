@@ -1,24 +1,12 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "server.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "build/**",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/server.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/build/$1"
-    }
+  "buildCommand": "npm run build",
+  "outputDirectory": "build",
+  "rewrites": [
+    { "source": "/api/createThread", "destination": "/api/createThread" },
+    { "source": "/api/getAssistantAdvice", "destination": "/api/getAssistantAdvice" },
+    { "source": "/api/debug", "destination": "/api/debug" },
+    { "source": "/(.*)", "destination": "/build/$1" }
   ],
   "env": {
     "NODE_ENV": "production"
