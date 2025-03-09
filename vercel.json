@@ -2,6 +2,12 @@
   "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "build",
+  "functions": {
+    "api/*.js": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  },
   "rewrites": [
     { "source": "/api/createThread", "destination": "/api/createThread" },
     { "source": "/api/getAssistantAdvice", "destination": "/api/getAssistantAdvice" },

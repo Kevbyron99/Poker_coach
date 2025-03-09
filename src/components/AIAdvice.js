@@ -181,6 +181,7 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const threadIdRef = useRef(null);
+  const [isConnected, setIsConnected] = useState(false);
 
   // Initialize thread ID on component mount
   useEffect(() => {
@@ -193,6 +194,7 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
         if (storedThreadId) {
           console.log("Using stored thread ID:", storedThreadId);
           threadIdRef.current = storedThreadId;
+          setIsConnected(true);
         } else {
           console.log("No thread ID found, creating a new thread...");
           
@@ -201,25 +203,7 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
           setIsLoading(true);
           
           console.log("Creating a new thread...");
-          const response = await fetch('/api/openai/createThread', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            }
-          });
-          
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`API error: ${errorData.error || response.status}`);
-          }
-          
-          const data = await response.json();
-          threadIdRef.current = data.threadId;
-          
-          // Store thread ID in localStorage
-          localStorage.setItem('pokerAssistantThreadId', data.threadId);
-          console.log("New thread created:", data.threadId);
-          setIsLoading(false);
+          await createNewThread();
         }
       } catch (error) {
         console.error("Failed to initialize thread:", error);
@@ -262,12 +246,12 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
     }
   };
 
-  const createNewThread = async () => {
+  const createNewThread = async (retryCount = 0, maxRetries = 3) => {
     setIsLoading(true);
     setError('');
     
     try {
-      console.log("Creating a new thread...");
+      console.log(`Creating a new thread (attempt ${retryCount + 1} of ${maxRetries + 1})...`);
       
       const apiUrl = getApiUrl('createThread');
       console.log(`Calling API endpoint: ${apiUrl}`);
@@ -281,6 +265,23 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
       
       if (!response.ok) {
         console.error(`API error (${response.status}): Thread creation failed`);
+        
+        // Special handling for timeout errors (504)
+        if (response.status === 504) {
+          console.warn("Gateway timeout detected - API request took too long");
+          
+          if (retryCount < maxRetries) {
+            console.log(`Retrying thread creation (attempt ${retryCount + 1} of ${maxRetries})...`);
+            setError(`Connection attempt timed out. Retrying (${retryCount + 1}/${maxRetries})...`);
+            
+            // Wait a moment before retrying
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            
+            // Retry the request
+            return createNewThread(retryCount + 1, maxRetries);
+          }
+        }
+        
         // Get error data if available
         try {
           const responseText = await response.text();
@@ -330,17 +331,36 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
         threadIdRef.current = responseData.threadId;
         setIsLoading(false);
         setError('');
+        setIsConnected(true);
       } else {
         throw new Error('No thread ID in response');
       }
     } catch (error) {
       console.error('Error creating thread:', error);
+      
+      // Retry logic for network errors
+      if (retryCount < maxRetries && (
+        error.message.includes('timeout') ||
+        error.message.includes('network') ||
+        error.message.includes('failed to fetch')
+      )) {
+        console.log(`Network error, retrying thread creation (${retryCount + 1}/${maxRetries})...`);
+        setError(`Connection failed. Retrying (${retryCount + 1}/${maxRetries})...`);
+        
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 2000 * (retryCount + 1)));
+        
+        // Retry
+        return createNewThread(retryCount + 1, maxRetries);
+      }
+      
       setError(`Failed to connect to AI assistant: ${error.message}`);
       setIsLoading(false);
+      setIsConnected(false);
     }
   };
 
-  const getAdvice = async (retryCount = 0) => {
+  const getAdvice = async (retryCount = 0, maxRetries = 3) => {
     // If we don't have any player cards, don't try to get advice
     if (!playerCards || playerCards.length === 0) {
       console.log("No player cards provided, not requesting advice");
@@ -374,58 +394,61 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
           setError('No connection to AI assistant. Attempting to reconnect...');
           // Try to create a new thread
           await createNewThread();
+          
+          // If we successfully created a thread, retry getting advice
+          if (threadIdRef.current) {
+            return getAdvice(retryCount + 1);
+          } else {
+            throw new Error('Failed to establish connection to AI assistant after retry');
+          }
         } else {
-          throw new Error('Failed to establish connection to AI assistant after retry');
+          throw new Error('Failed to establish connection to AI assistant');
         }
       }
       
-      const stage = communityCards.length === 0 ? 'preflop' : 
-                    communityCards.length === 3 ? 'flop' : 
-                    communityCards.length === 4 ? 'turn' : 'river';
-      
-      console.log(`Getting advice for ${stage} with thread ${threadIdRef.current}`);
-      
-      // Calculate hand potential
-      const handPotential = calculateHandPotential(playerCards, communityCards);
-      console.log("Hand potential:", handPotential);
-      
-      // Check if the two player cards are suited
-      const areSuited = playerCards.length === 2 && playerCards[0][1] === playerCards[1][1];
-      
-      // Check if the two player cards are paired
-      const isPair = playerCards.length === 2 && playerCards[0][0] === playerCards[1][0];
-      
-      // Format the message for the assistant
+      // Prepare message data
       const messageData = {
         threadId: threadIdRef.current,
         assistantId: 'asst_njK8PBKyiIeYVWBbsUsjmKBM',
         message: JSON.stringify({
-          playerCards: playerCards.join(', '),
-          communityCards: communityCards.length > 0 ? communityCards.join(', ') : 'none',
-          odds: odds ? `${(odds[0] * 100).toFixed(1)}%` : 'unknown',
-          stage: gameState?.currentStreet || 'preflop',
-          handPotential: handPotential,
-          isSuited: areSuited,
-          isPair: isPair,
-          handDescription: isPair ? `Pair of ${playerCards[0][0]}'s` : `${playerCards[0][0]}${playerCards[1][0]}${areSuited ? 's' : 'o'}`,
+          // Player's hand
+          playerCards: playerCards || [],
           
-          // Add position information
-          inPosition: isInPosition(gameDetails?.playerPosition, gameDetails?.players),
+          // Community cards
+          communityCards: communityCards || [],
+          
+          // Stage of the game
+          stage: determineStage(communityCards),
+          
+          // Hand analysis
+          handDescriptor: '',
+          possibleHands: calculateHandPotential(playerCards, communityCards),
+          
+          // Current hand strength (using percentile odds)
+          handStrength: odds?.percent || 0,
+          
+          // Position information
+          position: gameDetails?.playerPosition || 0,
           positionName: getPositionName(gameDetails?.playerPosition, gameDetails?.players),
+          blindPositions: {
+            smallBlinding: gameDetails?.smallBlind || 1,
+            bigBlind: gameDetails?.bigBlind || 2,
+            activePlayer: gameDetails?.playerPosition || 0,
+            isActivePlayer: gameDetails?.playerPosition !== undefined
+          },
           
-          // Add blind information
-          blindPositions: gameState?.blindPositions,
-          isPlayerSB: gameState?.blindPositions?.smallBlind === gameDetails?.playerPosition,
-          isPlayerBB: gameState?.blindPositions?.bigBlind === gameDetails?.playerPosition,
-          currentBlinds: gameState?.currentBlinds,
+          // Current betting round information
+          playerActions: {
+            0: gameState?.playerActions?.[0] || null,
+            1: gameState?.playerActions?.[1] || null,
+            2: gameState?.playerActions?.[2] || null,
+            3: gameState?.playerActions?.[3] || null,
+          },
           
-          // Add action tracking information
-          activePlayer: gameState?.activePlayer,
-          isActivePlayer: gameState?.activePlayer === gameDetails?.playerPosition,
-          playerActions: gameState?.playerActions,
-          foldedPlayers: gameState?.foldedPlayers,
+          // Folded players
+          foldedPlayers: gameState?.foldedPlayers || [],
           
-          // Add pot information
+          // Pot information
           potSize: gameState?.potSize || 0,
           betToCall: gameState?.betToCall || 0,
           potOdds: gameState?.potSize && gameState?.betToCall && gameState?.betToCall > 0
@@ -466,6 +489,23 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
       if (!response.ok) {
         // Log detailed error information
         console.error(`API error (${response.status}): Advice request failed`);
+        
+        // Special handling for timeout errors (504)
+        if (response.status === 504) {
+          console.warn("Gateway timeout detected - API request took too long");
+          
+          if (retryCount < maxRetries) {
+            console.log(`Retrying request (attempt ${retryCount + 1} of ${maxRetries})...`);
+            setError(`Request timed out. Retrying (${retryCount + 1}/${maxRetries})...`);
+            
+            // Wait a moment before retrying to allow system to recover
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            
+            // Retry the request
+            return getAdvice(retryCount + 1, maxRetries);
+          }
+        }
+        
         try {
           const errorData = await response.json();
           console.error('Error details:', errorData);
@@ -508,32 +548,21 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
         setAdvice(responseData.content);
       } else {
         console.log("No advice in API response");
-        setAdvice("The AI assistant did not return any advice. Please try again.");
+        throw new Error("No advice was returned from the AI assistant");
       }
+      
+      // Clear any previous errors
       setError('');
-      
     } catch (error) {
-      console.error('Failed to get advice from AI assistant:', error);
+      console.error("Failed to get advice from AI assistant:", error);
       
-      // Only retry once and only for certain types of errors
-      if (retryCount < 2 && (
-          error.message.includes('timeout') || 
-          error.message.includes('network') ||
-          error.message.includes('connection') ||
-          error.message.includes('500') ||
-          error.message.includes('503')
-      )) {
-        console.log(`Retrying... (${retryCount + 1})`);
-        setTimeout(() => getAdvice(retryCount + 1), 2000);
-        return;
+      if (error.message.includes('timed out') || error.message.includes('timeout')) {
+        setError(`Request timed out. The AI service is taking too long to respond. Please try again later or refresh the page.`);
+      } else {
+        setError(`Error: ${error.message}`);
       }
-      
-      setError(`AI assistant unavailable: ${error.message}. Please try refreshing the page or clicking the retry button below.`);
-      
     } finally {
-      if (retryCount === 0) {
-        setIsLoading(false);
-      }
+      setIsLoading(false);
     }
   };
 
@@ -606,6 +635,15 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Determine the stage of the game based on community cards
+  const determineStage = (cards) => {
+    if (!cards || cards.length === 0) return 'preflop';
+    if (cards.length === 3) return 'flop';
+    if (cards.length === 4) return 'turn';
+    if (cards.length === 5) return 'river';
+    return 'unknown';
   };
 
   // Get position name based on player position and count
