@@ -183,6 +183,19 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
   const threadIdRef = useRef(null);
   const [isConnected, setIsConnected] = useState(false);
 
+  // Add ref for advice container to enable auto-scroll
+  const adviceContainerRef = useRef(null);
+  
+  // Auto-scroll effect when advice updates
+  useEffect(() => {
+    if (adviceContainerRef.current && advice) {
+      adviceContainerRef.current.scrollTop = 0;
+      
+      // Make sure the AI advice section is visible when new advice comes in
+      adviceContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [advice]);
+
   // Initialize thread ID on component mount
   useEffect(() => {
     console.log("Initializing thread ID...");
@@ -762,7 +775,7 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
       
       {/* OpenAI assistant advice */}
       {advice && !isLoading && (
-        <div className="ai-advice-container">
+        <div className="ai-advice-container" ref={adviceContainerRef}>
           <div className="advice-content">
             <div dangerouslySetInnerHTML={{ __html: advice }}></div>
           </div>
@@ -771,7 +784,7 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
       
       {/* Show placeholder message when no cards selected or advice loaded */}
       {!advice && !isLoading && !error && playerCards && playerCards.length > 0 && (
-        <div className="ai-advice-container">
+        <div className="ai-advice-container" ref={adviceContainerRef}>
           <div className="advice-content">
             <p>AI assistant is analyzing your hand... <span className="analyzing-animation"></span></p>
           </div>

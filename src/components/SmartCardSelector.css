@@ -1,0 +1,420 @@
+.smart-selector {
+  margin-bottom: 20px;
+  background-color: #1e2736;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.smart-selector .selected-cards-area {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.smart-selector .selected-cards-display {
+  display: flex;
+  align-items: center;
+  background-color: #2c3e50;
+  border-radius: 8px;
+  padding: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.smart-selector .selected-cards-display:hover {
+  background-color: #34495e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.smart-selector .selected-cards-display:active {
+  transform: translateY(0);
+}
+
+.smart-selector .cards-label {
+  font-weight: 600;
+  margin-right: 15px;
+  color: #3498db;
+  min-width: 140px;
+  font-size: 1.1rem;
+}
+
+.smart-selector .selected-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.smart-selector .card-display {
+  background-color: #fff;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 1.2rem;
+  min-width: 32px;
+  text-align: center;
+}
+
+.smart-selector .no-cards {
+  color: #95a5a6;
+  font-style: italic;
+}
+
+.smart-selector .select-cards-btn {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 15px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 5px;
+  font-weight: 500;
+  width: 100%;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+.smart-selector .select-cards-btn:hover {
+  background-color: #2980b9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.smart-selector .select-cards-btn:active {
+  transform: translateY(0);
+}
+
+/* Styling for the card grid */
+.smart-selector .card-grid {
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  gap: 5px;
+  margin: 15px 0;
+}
+
+/* Card type indicator colors */
+.smart-selector .player-card {
+  border: 2px solid #3498db !important;
+}
+
+.smart-selector .community-card {
+  border: 2px solid #2ecc71 !important;
+}
+
+/* Card selection indicator */
+.smart-selector .card::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: transparent;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.smart-selector .player-card::after {
+  background: #3498db;
+  opacity: 1;
+}
+
+.smart-selector .community-card::after {
+  background: #2ecc71;
+  opacity: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .smart-selector .card-grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
+  
+  .smart-selector .selected-cards-display {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .smart-selector .cards-label {
+    margin-bottom: 8px;
+  }
+}
+
+.card-display-empty {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 1.2rem;
+  min-width: 32px;
+  text-align: center;
+  display: inline-block;
+  color: #95a5a6;
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+}
+
+.player-card-display {
+  border: 2px solid #3498db;
+}
+
+.community-card-display {
+  border: 2px solid #2ecc71;
+}
+
+.selection-instructions {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 12px;
+  margin: 15px 0;
+  border-left: 3px solid #3498db;
+}
+
+.instruction-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.instruction-row:last-child {
+  margin-bottom: 0;
+}
+
+.indicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.player-indicator {
+  background-color: #3498db;
+}
+
+.community-indicator {
+  background-color: #2ecc71;
+}
+
+.selection-status {
+  background-color: rgba(52, 152, 219, 0.1);
+  border-radius: 6px;
+  padding: 12px;
+  margin: 15px 0;
+}
+
+.status-count {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.status-count span {
+  font-weight: 600;
+  color: #3498db;
+}
+
+.status-detail {
+  display: flex;
+  justify-content: space-between;
+}
+
+.status-item {
+  font-size: 0.95rem;
+}
+
+.player-label {
+  color: #3498db;
+  font-weight: 500;
+}
+
+.community-label {
+  color: #2ecc71;
+  font-weight: 500;
+}
+
+/* Simplified card summary display */
+.card-summary {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  background-color: #1c2533;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.player-cards-summary, .community-cards-summary {
+  width: 48%;
+}
+
+.summary-label {
+  font-weight: 600;
+  color: #3498db;
+  display: block;
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+}
+
+.community-cards-summary .summary-label {
+  color: #2ecc71;
+}
+
+.summary-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.card-pill {
+  background-color: white;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.empty-selection {
+  color: #95a5a6;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+/* Quick select button */
+.quick-select-btn {
+  width: 100%;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quick-select-btn:hover {
+  background-color: #2980b9;
+  transform: translateY(-2px);
+}
+
+/* Fast card selection grid */
+.rapid-card-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 10px 0;
+}
+
+.rank-group {
+  display: flex;
+  gap: 5px;
+}
+
+.rapid-card {
+  width: 40px;
+  height: 40px;
+  background-color: white;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.1s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.rapid-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.rapid-card.player-card {
+  border: 2px solid #3498db;
+}
+
+.rapid-card.community-card {
+  border: 2px solid #2ecc71;
+}
+
+/* Selection header with counters */
+.selection-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.selection-counter {
+  display: flex;
+  gap: 10px;
+}
+
+.counter-pill {
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.player-counter {
+  background-color: rgba(52, 152, 219, 0.2);
+  color: #3498db;
+}
+
+.community-counter {
+  background-color: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+}
+
+.quick-selection-explanation {
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 8px;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+/* Selection actions */
+.selection-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.clear-btn, .done-btn {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.clear-btn {
+  background-color: #95a5a6;
+  color: white;
+}
+
+.clear-btn:hover {
+  background-color: #7f8c8d;
+}
+
+.done-btn {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.done-btn:hover {
+  background-color: #27ae60;
+} 

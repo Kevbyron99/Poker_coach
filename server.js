@@ -8,8 +8,13 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 // Make sure we have the OpenAI API key
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-if (!OPENAI_API_KEY) {
+let OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+// For local development, if the API key is not found in env variables, use a hardcoded one
+if (!OPENAI_API_KEY && process.env.NODE_ENV !== 'production') {
+  console.log('Using hardcoded API key for local development');
+  OPENAI_API_KEY = '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';
+} else if (!OPENAI_API_KEY) {
   console.error('OPENAI API KEY IS MISSING! Please check your environment variables');
 }
 

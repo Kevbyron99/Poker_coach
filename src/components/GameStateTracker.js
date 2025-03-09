@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './GameStateTracker.css';
+import SmartCardSelector from './SmartCardSelector';
 
 // Create a more efficient card selection component
 function QuickCardSelector({ 
@@ -182,7 +183,15 @@ function QuickCardSelector({
   );
 }
 
-function GameStateTracker({ gameDetails, onGameStateUpdate, playerCount, playerCards = [], communityCards = [], onSelectPlayerCard, onSelectCommunityCard }) {
+function GameStateTracker({ 
+  gameDetails, 
+  onGameStateUpdate, 
+  playerCount, 
+  playerCards = [], 
+  communityCards = [],
+  onSelectPlayerCard,
+  onSelectCommunityCard
+}) {
   const [potSize, setPotSize] = useState(gameDetails?.bigBlind * 1.5 || 0);
   const [playerStacks, setPlayerStacks] = useState(() => {
     // Initialize player stacks based on player count
@@ -271,11 +280,141 @@ function GameStateTracker({ gameDetails, onGameStateUpdate, playerCount, playerC
     });
   };
   
-  // Initialize game state when component mounts or gameDetails changes
+  // Track changes to game state
   useEffect(() => {
+    // Handle player count changes
+    if (playerCount !== Object.keys(playerStacks).length) {
+      adjustForPlayerCountChange();
+    }
+    
+    // Update game state to parent
     updateGameState();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [playerCount, playerStacks]);
+  
+  // A separate effect to handle player position changes
+  useEffect(() => {
+    // Check if we have new game state information
+    if (!gameDetails) return;
+    
+    // Extract player position changes from the latest game state
+    const playerAdded = gameDetails.playerAdded;
+    const playerRemoved = gameDetails.playerRemoved;
+    
+    // Handle position-specific player changes
+    if (playerRemoved !== undefined) {
+      handlePlayerRemoval(playerRemoved);
+      // Clear the flag after processing
+      gameDetails.playerRemoved = undefined;
+    }
+    
+    if (playerAdded !== undefined) {
+      handlePlayerAddition(playerAdded);
+      // Clear the flag after processing
+      gameDetails.playerAdded = undefined;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameDetails]);
+  
+  // Handle player removal at specific position
+  const handlePlayerRemoval = (position) => {
+    console.log(`Removing player at position ${position}`);
+    
+    // Create new stacks object
+    const newStacks = {};
+    
+    // For each position, remap the stacks
+    Object.keys(playerStacks).forEach(oldPos => {
+      const oldPosInt = parseInt(oldPos);
+      
+      // Skip the removed position
+      if (oldPosInt === position) return;
+      
+      // For positions after the removed one, shift down by 1
+      const newPosInt = oldPosInt > position ? oldPosInt - 1 : oldPosInt;
+      newStacks[newPosInt] = playerStacks[oldPosInt];
+    });
+    
+    setPlayerStacks(newStacks);
+    
+    // Adjust blind positions if needed
+    const newBlindPositions = {...blindPositions};
+    
+    // If SB was removed, adjust
+    if (blindPositions.smallBlind === position) {
+      newBlindPositions.smallBlind = (blindPositions.smallBlind + 1) % playerCount;
+    } 
+    // If SB was after the removed position, adjust
+    else if (blindPositions.smallBlind > position) {
+      newBlindPositions.smallBlind--;
+    }
+    
+    // If BB was removed, adjust
+    if (blindPositions.bigBlind === position) {
+      newBlindPositions.bigBlind = (blindPositions.bigBlind + 1) % playerCount;
+    } 
+    // If BB was after the removed position, adjust
+    else if (blindPositions.bigBlind > position) {
+      newBlindPositions.bigBlind--;
+    }
+    
+    setBlindPositions(newBlindPositions);
+    
+    // Adjust active player if needed
+    if (activePlayer === position) {
+      setActivePlayer((activePlayer + 1) % playerCount);
+    } else if (activePlayer > position) {
+      setActivePlayer(activePlayer - 1);
+    }
+    
+    // Update game state after the change
+    updateGameState();
+  };
+  
+  // Handle player addition at specific position
+  const handlePlayerAddition = (position) => {
+    console.log(`Adding player at position ${position}`);
+    
+    // Create new stacks object
+    const newStacks = {};
+    
+    // For each position, remap the stacks
+    Object.keys(playerStacks).forEach(oldPos => {
+      const oldPosInt = parseInt(oldPos);
+      
+      // For positions at or after the new one, shift up by 1
+      const newPosInt = oldPosInt >= position ? oldPosInt + 1 : oldPosInt;
+      newStacks[newPosInt] = playerStacks[oldPosInt];
+    });
+    
+    // Add the new player stack
+    newStacks[position] = currentBlinds.bigBlind * 50; // Default starting stack
+    
+    setPlayerStacks(newStacks);
+    
+    // Adjust blind positions if needed
+    const newBlindPositions = {...blindPositions};
+    
+    // If SB was at or after the new position, adjust
+    if (blindPositions.smallBlind >= position) {
+      newBlindPositions.smallBlind++;
+    }
+    
+    // If BB was at or after the new position, adjust
+    if (blindPositions.bigBlind >= position) {
+      newBlindPositions.bigBlind++;
+    }
+    
+    setBlindPositions(newBlindPositions);
+    
+    // Adjust active player if needed
+    if (activePlayer >= position) {
+      setActivePlayer(activePlayer + 1);
+    }
+    
+    // Update game state after the change
+    updateGameState();
+  };
   
   // Helper to check if a player can take an action
   const canPlayerAct = (position) => {
@@ -660,6 +799,56 @@ function GameStateTracker({ gameDetails, onGameStateUpdate, playerCount, playerC
     return `${odds}:1`;
   };
   
+  // Adjust for changes in player count (general, not position specific)
+  const adjustForPlayerCountChange = () => {
+    console.log(`Adjusting for player count change from ${Object.keys(playerStacks).length} to ${playerCount}`);
+    
+    // Create new stacks
+    const newStacks = {};
+    const oldPlayerCount = Object.keys(playerStacks).length;
+    
+    // If increasing player count
+    if (playerCount > oldPlayerCount) {
+      // Keep existing players
+      for (let i = 0; i < oldPlayerCount; i++) {
+        newStacks[i] = playerStacks[i];
+      }
+      
+      // Add new players with default stacks
+      for (let i = oldPlayerCount; i < playerCount; i++) {
+        newStacks[i] = currentBlinds.bigBlind * 50; // Default stack size
+      }
+    } 
+    // If decreasing player count
+    else {
+      // Keep only the players we still have
+      for (let i = 0; i < playerCount; i++) {
+        newStacks[i] = playerStacks[i];
+      }
+    }
+    
+    setPlayerStacks(newStacks);
+    
+    // Adjust blind positions if needed
+    const newBlindPositions = {...blindPositions};
+    
+    // Ensure blind positions are within the new player count
+    if (newBlindPositions.smallBlind >= playerCount) {
+      newBlindPositions.smallBlind = 0;
+    }
+    
+    if (newBlindPositions.bigBlind >= playerCount) {
+      newBlindPositions.bigBlind = 1;
+    }
+    
+    setBlindPositions(newBlindPositions);
+    
+    // Ensure active player is within the new player count
+    if (activePlayer >= playerCount) {
+      setActivePlayer(0);
+    }
+  };
+  
   return (
     <div className="game-state-tracker">
       <div className="game-state-summary">
@@ -678,16 +867,6 @@ function GameStateTracker({ gameDetails, onGameStateUpdate, playerCount, playerC
         </div>
       </div>
       
-      {/* Card Selection Interface - Replaced with QuickCardSelector */}
-      <div className="card-selection-interface">
-        <QuickCardSelector 
-          playerCards={playerCards}
-          communityCards={communityCards}
-          onSelectPlayerCard={onSelectPlayerCard}
-          onSelectCommunityCard={onSelectCommunityCard}
-        />
-      </div>
-      
       <div className="blind-controls">
         <h4>Blinds: SB ${currentBlinds.smallBlind} / BB ${currentBlinds.bigBlind}</h4>
         <div className="blind-actions">
@@ -697,6 +876,17 @@ function GameStateTracker({ gameDetails, onGameStateUpdate, playerCount, playerC
           <div>Small Blind: Player {blindPositions.smallBlind + 1}</div>
           <div>Big Blind: Player {blindPositions.bigBlind + 1}</div>
         </div>
+      </div>
+      
+      {/* Card selection */}
+      <div className="card-selection-interface">
+        <h4>Cards</h4>
+        <SmartCardSelector 
+          onPlayerCardsSelected={onSelectPlayerCard}
+          onCommunityCardsSelected={onSelectCommunityCard}
+          playerCards={playerCards}
+          communityCards={communityCards}
+        />
       </div>
       
       <div className="player-stacks">

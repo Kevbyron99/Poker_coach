@@ -349,10 +349,32 @@
 
 /* Card selection interface */
 .card-selection-interface {
+  margin-top: 20px;
+  padding: 15px;
   background-color: #1e2736;
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.card-selection-interface h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #3498db;
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Overrides for SmartCardSelector when inside GameStateTracker */
+.card-selection-interface .smart-selector {
+  margin-bottom: 0;
+  background-color: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.card-selection-interface .smart-selector .selected-cards-display {
+  background-color: #243142;
 }
 
 .cards-display {

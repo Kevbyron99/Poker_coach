@@ -3,7 +3,7 @@ import { Hand } from 'pokersolver';
 import './PokerAssistant.css';
 
 import GameManager from './GameManager';
-import CardSelector from './CardSelector';
+import SmartCardSelector from './SmartCardSelector';
 import AIAdvice from './AIAdvice';
 import HandRankings from './HandRankings';
 import GameStateTracker from './GameStateTracker';
@@ -110,6 +110,8 @@ function PokerAssistant() {
     currentBets: {},
     betToCall: 0
   });
+  const [playerActionType, setPlayerActionType] = useState(null); // 'add' or 'remove'
+  const [showPositionSelector, setShowPositionSelector] = useState(false);
 
   // Calculate odds when cards change
   useEffect(() => {
@@ -419,10 +421,16 @@ function PokerAssistant() {
     setError('');
   }
 
-  const updatePlayerCount = (changeAmount) => {
+  const updatePlayerCount = (changeAmount, specificPosition = null) => {
     if (!gameDetails) return;
     
-    // Ensure we don't go below 2 players or above 10
+    // For position-specific changes
+    if (specificPosition !== null) {
+      handlePositionSpecificChange(changeAmount, specificPosition);
+      return;
+    }
+    
+    // For general count changes (backwards compatibility)
     const newPlayerCount = Math.max(2, Math.min(10, gameDetails.players + changeAmount));
     
     if (newPlayerCount === gameDetails.players) return;
@@ -438,6 +446,102 @@ function PokerAssistant() {
       players: newPlayerCount,
       playerPosition: newPosition
     });
+  };
+  
+  // Handle player added or removed at specific position
+  const handlePositionSpecificChange = (changeAmount, position) => {
+    // Don't allow removing the last 2 players
+    if (changeAmount < 0 && gameDetails.players <= 2) return;
+    
+    // Don't allow more than 10 players
+    if (changeAmount > 0 && gameDetails.players >= 10) return;
+    
+    // Create a copy of the current game details
+    const newGameDetails = {...gameDetails};
+    
+    if (changeAmount < 0) {
+      // REMOVING a player
+      // Close the position selector
+      setShowPositionSelector(false);
+      setPlayerActionType(null);
+      
+      // Logic for removing a player at a specific position
+      newGameDetails.players = gameDetails.players - 1;
+      
+      // If we're removing the player's position, move them
+      if (position === gameDetails.playerPosition) {
+        newGameDetails.playerPosition = 0; // Move to position 1
+      }
+      // If player position is after the removed position, adjust it
+      else if (gameDetails.playerPosition > position) {
+        newGameDetails.playerPosition = gameDetails.playerPosition - 1;
+      }
+      
+      // Add the position info directly to the game details
+      newGameDetails.playerRemoved = position;
+      
+      setGameDetails(newGameDetails);
+    } else {
+      // ADDING a player
+      // Close the position selector
+      setShowPositionSelector(false);
+      setPlayerActionType(null);
+      
+      // Logic for adding a player at a specific position
+      newGameDetails.players = gameDetails.players + 1;
+      
+      // If player position is at or after the new position, adjust it
+      if (gameDetails.playerPosition >= position) {
+        newGameDetails.playerPosition = gameDetails.playerPosition + 1;
+      }
+      
+      // Add the position info directly to the game details
+      newGameDetails.playerAdded = position;
+      
+      setGameDetails(newGameDetails);
+    }
+  };
+  
+  // Handle the player action button click
+  const handlePlayerActionClick = (action) => {
+    setPlayerActionType(action);
+    setShowPositionSelector(true);
+  };
+  
+  // Renders the position selector dropdown
+  const renderPositionSelector = () => {
+    if (!showPositionSelector) return null;
+    
+    const positions = Array.from({length: playerActionType === 'add' ? gameDetails.players + 1 : gameDetails.players}, (_, i) => i);
+    
+    return (
+      <div className="position-selector-overlay">
+        <div className="position-selector">
+          <h4>{playerActionType === 'add' ? 'Add Player at Position:' : 'Remove Player from Position:'}</h4>
+          <div className="position-buttons">
+            {positions.map(position => (
+              <button 
+                key={position}
+                onClick={() => handlePositionSpecificChange(playerActionType === 'add' ? 1 : -1, position)}
+                className="position-button"
+                disabled={playerActionType === 'remove' && position === gameDetails.playerPosition}
+              >
+                {position + 1} {position === gameDetails.playerPosition && "(You)"}
+              </button>
+            ))}
+          </div>
+          <button 
+            className="cancel-button"
+            onClick={() => {
+              setShowPositionSelector(false);
+              setPlayerActionType(null);
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
   };
 
   // Add handler for training game button
@@ -464,12 +568,6 @@ function PokerAssistant() {
         <div className="landing-page">
           <div className="buttons-container">
             <GameManager onGameCreated={handleGameCreated} />
-            <button 
-              className="training-game-btn" 
-              onClick={handleTrainingGameClick}
-            >
-              Start Training Game
-            </button>
           </div>
           
           {trainingMessage && (
@@ -494,8 +592,20 @@ function PokerAssistant() {
                 <div className="game-info">
                   <span>Players: {gameDetails.players}</span>
                   <div className="player-controls">
-                    <button onClick={() => updatePlayerCount(-1)} disabled={gameDetails.players <= 2}>Player Left</button>
-                    <button onClick={() => updatePlayerCount(1)} disabled={gameDetails.players >= 10}>Player Joined</button>
+                    <button 
+                      onClick={() => handlePlayerActionClick('remove')} 
+                      disabled={gameDetails.players <= 2}
+                      className="player-action-btn"
+                    >
+                      Player Left
+                    </button>
+                    <button 
+                      onClick={() => handlePlayerActionClick('add')}
+                      disabled={gameDetails.players >= 10}
+                      className="player-action-btn"
+                    >
+                      Player Joined
+                    </button>
                   </div>
                   <span>Your Position: {gameDetails.playerPosition + 1}</span>
                   <span>SB/BB: ${gameDetails.smallBlind}/${gameDetails.bigBlind}</span>
@@ -505,6 +615,9 @@ function PokerAssistant() {
                   <button className="reset-game-btn" onClick={resetGame}>Start New Game</button>
                 </div>
               </div>
+              
+              {/* Position selector overlay */}
+              {renderPositionSelector()}
               
               {/* Game state tracker */}
               <GameStateTracker 
@@ -516,25 +629,6 @@ function PokerAssistant() {
                 onSelectPlayerCard={handlePlayerCardsSelected}
                 onSelectCommunityCard={handleCommunityCardsSelected}
               />
-              
-              {/* Card selectors */}
-              <div className="card-selectors">
-                <CardSelector 
-                  label="Your Hand"
-                  maxCards={2}
-                  onCardsSelected={handlePlayerCardsSelected}
-                  selectedCards={playerCards}
-                  disabledCards={[]}
-                />
-                
-                <CardSelector 
-                  label="Community Cards"
-                  maxCards={5}
-                  onCardsSelected={handleCommunityCardsSelected}
-                  selectedCards={communityCards}
-                  disabledCards={playerCards}
-                />
-              </div>
               
               {/* Error message */}
               {error && <div className="error">{error}</div>}
