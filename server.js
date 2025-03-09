@@ -4,13 +4,13 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 
-// Load environment variables
-dotenv.config({ path: '.env.development.local' });
+// Load environment variables - prioritize environment variables over .env files
+dotenv.config();
 
 // Make sure we have the OpenAI API key
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 if (!OPENAI_API_KEY) {
-  console.error('OPENAI API KEY IS MISSING! Please add it to your .env.development.local file');
+  console.error('OPENAI API KEY IS MISSING! Please check your environment variables');
 }
 
 // Create global config for API handlers
@@ -18,6 +18,12 @@ global.openaiConfig = {
   apiKey: OPENAI_API_KEY,
   modelName: 'gpt-4-turbo-preview',
 };
+
+// Log API initialization
+console.log('Initializing API with OpenAI config:', {
+  apiKeyAvailable: !!OPENAI_API_KEY,
+  model: global.openaiConfig.modelName
+});
 
 const app = express();
 const PORT = process.env.PORT || 3001;

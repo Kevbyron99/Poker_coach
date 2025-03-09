@@ -242,7 +242,13 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
   const createNewThread = async () => {
     try {
       console.log("Creating a new thread...");
-      const response = await fetch('/api/openai/createThread', {
+      const apiUrl = process.env.NODE_ENV === 'production' 
+        ? '/api/openai/createThread'
+        : '/api/openai/createThread';
+      
+      console.log(`Calling API endpoint: ${apiUrl}`);
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -251,7 +257,8 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(`API error: ${errorData.error || response.status}`);
+        console.error('Thread creation failed with status:', response.status, errorData);
+        throw new Error(`API error: ${errorData.error || errorData.message || response.status}`);
       }
       
       const data = await response.json();
@@ -396,7 +403,13 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
       console.log("Sending request to OpenAI assistant...");
       console.log("Request body:", JSON.stringify(messageData));
       
-      const response = await fetch('/api/openai/getAssistantAdvice', {
+      const apiUrl = process.env.NODE_ENV === 'production' 
+        ? '/api/openai/getAssistantAdvice'
+        : '/api/openai/getAssistantAdvice';
+      
+      console.log(`Calling API endpoint: ${apiUrl}`);
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -405,9 +418,16 @@ function AIAdvice({ gameDetails, playerCards, communityCards, odds, gameState, o
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error("API Error Response:", errorData);
-        throw new Error(`API error: ${errorData.error || response.status}`);
+        // Log detailed error information
+        console.error(`API error (${response.status}): Advice request failed`);
+        try {
+          const errorData = await response.json();
+          console.error('Error details:', errorData);
+          throw new Error(errorData.message || errorData.error || `API error: ${response.status}`);
+        } catch (jsonError) {
+          // If we can't parse JSON, just use the status text
+          throw new Error(`API error: ${response.statusText || response.status}`);
+        }
       }
       
       // Here was the problem - we need to set the advice with the response
